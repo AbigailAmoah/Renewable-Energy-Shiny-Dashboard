@@ -1,0 +1,232 @@
+---
+title: "504_FINAL PROJECT"
+author: "Abigail Amoah"
+date: "2026-04-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(tidyverse)
+library(janitor)
+
+```
+
+
+```{r}
+#Histogram of renewable energy
+load("project_data.RData")
+
+ggplot(project_data, aes(renewable_energy)) +
+  geom_histogram(fill="steelblue", bins=30) +
+  labs(title="Distribution of Renewable Energy")
+
+```
+
+
+```{r}
+#Renewable energy by continent
+
+ggplot(project_data, aes(continent, renewable_energy, fill=continent)) +
+  geom_boxplot() +
+  theme_minimal()
+```
+
+```{r}
+
+#CO2 by Continent
+ggplot(project_data, aes(continent, co2, fill=continent)) +
+  geom_boxplot() +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+#Average renewable energy over years
+project_data %>%
+group_by(year) %>%
+summarise(avg = mean(renewable_energy, na.rm=TRUE)) %>%
+ggplot(aes(year, avg)) +
+geom_line(linewidth=1.2, color="blue") +
+labs(title="Global Renewable Energy Trend")
+
+```
+
+```{r}
+#Global Average CO2 Over Time
+project_data %>%
+group_by(year) %>%
+summarise(avg = mean(co2, na.rm=TRUE)) %>%
+ggplot(aes(year, avg)) +
+geom_line(color="red", linewidth=1.2)
+```
+
+
+```{r}
+#Electricity Access Over Time
+project_data %>%
+group_by(year) %>%
+summarise(avg = mean(electricity_access, na.rm=TRUE)) %>%
+ggplot(aes(year, avg)) +
+geom_line(color="darkgreen", linewidth=1.2)
+
+```
+
+
+```{r}
+#GDP vs Renewable Energy
+ggplot(project_data,
+       aes(gdp_per_capita, renewable_energy)) +
+geom_point(alpha=.5) +
+geom_smooth(method="lm")
+
+```
+
+
+```{r}
+#GDP vs CO2
+ggplot(project_data,
+       aes(gdp_per_capita, co2)) +
+geom_point(alpha=.5)
+
+```
+
+
+```{r}
+#CO2 vs Renewable Energy
+ggplot(project_data,
+       aes(co2, renewable_energy)) +
+geom_point(alpha=.5)
+
+```
+
+
+
+```{r}
+#Top 10 GDP Countries
+project_data %>%
+filter(year == max(year, na.rm=TRUE)) %>%
+arrange(desc(gdp_per_capita)) %>%
+slice_head(n=10) %>%
+ggplot(aes(reorder(country, gdp_per_capita),
+           gdp_per_capita)) +
+geom_col(fill="purple") +
+coord_flip()
+
+```
+
+
+```{r}
+#Choropleth World Map
+#install.packages(c("rnaturalearth","rnaturalearthdata"))
+library(rnaturalearth)
+library(sf)
+
+world <- ne_countries(scale="medium", returnclass="sf")
+
+map_df <- world %>%
+left_join(project_data %>%
+filter(year==max(year)) ,
+by=c("name"="country"))
+
+ggplot(map_df)+
+geom_sf(aes(fill=renewable_energy), color="white", size=.1)+
+scale_fill_viridis_c()+
+labs(title="Global Renewable Energy Use")
+
+```
+
+```{r}
+#Heatmap 
+#Renewable energy by continent across years.
+
+heat_data <- project_data %>%
+group_by(continent, year) %>%
+summarise(avg = mean(renewable_energy, na.rm=TRUE))
+
+ggplot(heat_data,
+aes(year, continent, fill=avg))+
+geom_tile()+
+scale_fill_viridis_c()+
+labs(title="Renewable Energy Heatmap")
+
+```
+
+```{r}
+#Faceted Trend Chart
+#Instead of messy many-country line chart.
+
+top <- c("United States","China","India","Germany")
+
+project_data %>%
+filter(country %in% top) %>%
+ggplot(aes(year, renewable_energy))+
+geom_line(color="darkgreen")+
+facet_wrap(~country)+
+labs(title="Renewable Energy Trends")
+
+```
+
+
+```{r}
+#Bubble Scatterplot (Keep This)
+scatter_data <- project_data %>%
+  filter(year == max(year, na.rm = TRUE)) %>%
+  filter(
+    !is.na(gdp_per_capita),
+    !is.na(renewable_energy),
+    !is.na(co2),
+    !is.na(continent)
+  )
+
+ggplot(scatter_data,
+aes(gdp_per_capita,
+renewable_energy,
+size=co2,
+color=continent))+
+geom_point(alpha=.7)+
+scale_x_log10()+
+theme_minimal()
+
+```
+
+```{r}
+#Slopegraph
+
+
+library(tidyr)
+
+slope <- project_data %>%
+filter(year %in% c(2000,max(year))) %>%
+filter(country %in% c("China","India","Germany","United States"))
+
+ggplot(slope,
+aes(x=year,y=renewable_energy,group=country,color=country))+
+geom_line(size=1.2)+
+geom_point(size=3)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+This plot shows how renewable energy consumption has changed over time for selected countries. We observe that some countries, such as Germany, show a steady increase in renewable energy use, while others have slower growth. This highlights differences in energy policies and levels of investment in sustainable energy across countries.
+
+
